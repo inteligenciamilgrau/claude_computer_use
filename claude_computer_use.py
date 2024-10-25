@@ -166,8 +166,7 @@ while chat_on:
                 resposta = perguntando(todas_messages)
                 print("Resposta Type:", resposta.content[0].text, "\n")
             else:
-                print("KEY:", resposta)
-                # falta implementar demais comandos
+                print("Falta implementar na ação 'key' o comando:", resposta.content[1].input['text'], "\n")
                 break
             
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "left_click_drag":
