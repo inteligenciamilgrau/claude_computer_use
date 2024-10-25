@@ -4,6 +4,7 @@ import base64
 import io
 from dotenv import load_dotenv
 import mss.tools
+import pyautogui
 from PIL import Image
 load_dotenv()
 
@@ -61,6 +62,18 @@ def grab_screen_of_monitor(monitor_index=1):
 
         return img_base64
 
+def template_resposta_tool(mensagem, id):
+    return {
+        "role": "user",
+        "content": [{
+            "tool_use_id": id,
+            "type": "tool_result"},
+            {
+                "type": "text",
+                "text": mensagem
+            }
+        ]
+    }
 
 chat_on = True
 todas_messages = []
@@ -104,8 +117,6 @@ while chat_on:
             
             
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "mouse_move":
-            import pyautogui
-
             def convert_coordinate(old_resolution, new_resolution, point):
                 old_width, old_height = old_resolution
                 new_width, new_height = new_resolution
@@ -123,59 +134,85 @@ while chat_on:
                 pyautogui.moveTo(new_coordinate)
             else:
                 pyautogui.moveTo(new_coordinate)
-            pergunta_tool = {
-                    "role": "user",
-                    "content": [{
-                        "tool_use_id": resposta.content[1].id,
-                        "type": "tool_result"},
-                        {
-                            "type": "text",
-                            "text": "Mouse movido"
-                        }
-                    ]
-                }
+            pergunta_tool = template_resposta_tool("Mouse Movido", resposta.content[1].id)
             todas_messages.append(pergunta_tool)
 
             resposta = perguntando(todas_messages)
             print("Resposta MOVE:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "left_click":
-            import pyautogui
-
-            pyautogui.click()
-            pergunta_tool = {
-                    "role": "user",
-                    "content": [{
-                        "tool_use_id": resposta.content[1].id,
-                        "type": "tool_result"},
-                        {
-                            "type": "text",
-                            "text": "Clicado"
-                        }
-                    ]
-                }
+            pyautogui.click(button='left')
+            pergunta_tool = template_resposta_tool("Clique esquerdo realizado", resposta.content[1].id)
             todas_messages.append(pergunta_tool)
 
             resposta = perguntando(todas_messages)
-            print("Resposta Click:", resposta.content[0].text, "\n")
+            print("Resposta Left Click:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "type":
-            print("TYPE")
-            break
+            pyautogui.write(resposta.content[1].input['text'])
+            pergunta_tool = template_resposta_tool("Texto escrito", resposta.content[1].id)
+            todas_messages.append(pergunta_tool)
+
+            resposta = perguntando(todas_messages)
+            print("Resposta Type:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "key":
-            print("KEY")
-            break
+            #* `key`: Press a key or key-combination on the keyboard.
+            #      - This supports xdotool's `key` syntax.
+            #      - Examples: "a", "Return", "alt+Tab", "ctrl+s", "Up", "KP_0" (for the numpad 0 key).
+            #    * 
+            if resposta.content[1].input['text'] == "Return":
+                pyautogui.press("return")
+                pergunta_tool = template_resposta_tool("Apertado " + resposta.content[1].input['text'], resposta.content[1].id)
+                todas_messages.append(pergunta_tool)
+
+                resposta = perguntando(todas_messages)
+                print("Resposta Type:", resposta.content[0].text, "\n")
+            else:
+                print("KEY:", resposta)
+                # falta implementar demais comandos
+                break
+            
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "left_click_drag":
-            print("LEFT CLICK DRAG")
-            break
+            def left_click_drag(x, y):
+                pyautogui.mouseDown(button='left')
+                
+                # Arrasta o cursor até a posição final
+                pyautogui.moveTo(x, y, duration=0.5)  # duration pode ser ajustado para controlar a velocidade
+                
+                # Solta o botão do mouse
+                pyautogui.mouseUp(button='left')
+            coord = resposta.content[1].input['coordinate']
+            left_click_drag(coord[0], coord[1])
+
+            pergunta_tool = template_resposta_tool("Clique esquerdo e arrasta realizado", resposta.content[1].id)
+            todas_messages.append(pergunta_tool)
+
+            resposta = perguntando(todas_messages)
+            print("Resposta Left Click Drag:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "right_click":
-            print("RIGHT_CLICK")
-            break
+            pyautogui.click(button='right')
+            pergunta_tool = template_resposta_tool("Clique direito realizado", resposta.content[1].id)
+            todas_messages.append(pergunta_tool)
+
+            resposta = perguntando(todas_messages)
+            print("Resposta Right Click:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "middle_click":
-            print("MIDDLE CLICK")
-            break
+            pyautogui.click(button='middle')
+            pergunta_tool = template_resposta_tool("Clique do meio realizado", resposta.content[1].id)
+            todas_messages.append(pergunta_tool)
+
+            resposta = perguntando(todas_messages)
+            print("Resposta Middle Click:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "double_click":
-            print("DOUBLE CLICK")
-            break
+            pyautogui.doubleClick()
+            pergunta_tool = template_resposta_tool("Clique esquerdo duplo realizado", resposta.content[1].id)
+            todas_messages.append(pergunta_tool)
+
+            resposta = perguntando(todas_messages)
+            print("Resposta Double Click:", resposta.content[0].text, "\n")
         elif 'action' in resposta.content[1].input and resposta.content[1].input['action'] == "cursor_position":
-            print("CURSOR POSITION")
-            break
+            x, y = pyautogui.position()
+            pergunta_tool = template_resposta_tool(f"Posição do mouse: x={x}, y={y}", resposta.content[1].id)
+            todas_messages.append(pergunta_tool)
+
+            resposta = perguntando(todas_messages)
+            print("Resposta Double Click:", resposta.content[0].text, "\n")
         todas_messages.append({"role": "assistant", "content": resposta.content})
